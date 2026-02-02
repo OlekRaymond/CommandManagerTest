@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 project(CommandManager)
 
 add_library(CommandManager CommandManager.cpp Message.hpp)
-set(CMAKE_CXX_STANDARD 17)
+set_property(TARGET CommandManager PROPERTY CXX_STANDARD 17)
 
 option(BUILD_TESTING "Build the test suite" ON)
 option(ENABLE_ASAN "Enable AddressSanitizer" ON)
@@ -12,20 +12,30 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     option(ENABLE_FUZZING "Enable fuzzing instrumentation" ON)
     if (BUILD_TESTING AND ENABLE_FUZZING)
         add_executable(FuzzTest FuzzTest.cpp Message.hpp FuzzTest.cpp)
-        target_compile_options(FuzzTest PRIVATE -fsanitize=fuzzing)
-        target_link_options(FuzzTest PRIVATE -fsanitize=fuzzing)
+        target_compile_options(FuzzTest PRIVATE -fsanitize=fuzzer)
+        target_link_options(FuzzTest PRIVATE -fsanitize=fuzzer)
+        set_property(TARGET FuzzTest PROPERTY CXX_STANDARD 17)
+
+        # install it so we can run it later
+        install(TARGETS FuzzTest)
     endif()
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     option(ENABLE_FUZZING "Enable fuzzing instrumentation" ON)
     if (BUILD_TESTING AND ENABLE_FUZZING)
         add_executable(FuzzTest FuzzTest.cpp Message.hpp FuzzTest.cpp)
-        target_compile_options(FuzzTest PRIVATE /fsanitize=fuzzing)
+        target_compile_options(FuzzTest PRIVATE /fsanitize=fuzzer)
+        set_property(TARGET FuzzTest PROPERTY CXX_STANDARD 17)
+        install(TARGETS FuzzTest)
     endif()
 endif()
+
+
 
 if(BUILD_TESTING)
     enable_testing()
     add_executable(Tests Tests.cpp Message.hpp)
+    set_property(TARGET Tests PROPERTY CXX_STANDARD 17)
+
     add_test(NAME AllTests COMMAND Tests)
     if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         if (ENABLE_ASAN)
