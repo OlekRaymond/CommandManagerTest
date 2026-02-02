@@ -14,6 +14,10 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         add_executable(FuzzTest FuzzTest.cpp Message.hpp FuzzTest.cpp)
         target_compile_options(FuzzTest PRIVATE -fsanitize=fuzzer)
         target_link_options(FuzzTest PRIVATE -fsanitize=fuzzer)
+        target_compile_options(FuzzTest PRIVATE -fsanitize=undefined)
+        target_link_options(FuzzTest PRIVATE -fsanitize=undefined)
+        target_compile_options(FuzzTest PRIVATE -fsanitize=memory)
+        target_link_options(FuzzTest PRIVATE -fsanitize=memory)
         set_property(TARGET FuzzTest PROPERTY CXX_STANDARD 17)
 
         # install it so we can run it later

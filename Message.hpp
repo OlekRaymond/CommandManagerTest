@@ -14,7 +14,9 @@
 // So:
 //  - assume they are might be downcast at some point earlier in the program 
 //  - allow for both until we find out
-
+// This tends to not matter much other than checking the charcter counts
+//  most of the time we just write the input back out
+//   
 
 namespace wstring_utils {
     // wstring annoances: 
@@ -78,6 +80,12 @@ constexpr void ValidateStringViewType() {
 template<typename StringView>
 constexpr std::true_type ValidateString(StringView message) {
     ValidateStringViewType<StringView>();
+
+    // If we decide that exceptions are a bad idea
+    //  I would use std::expected<std::string_view,std::string_view>
+    //  This way the error messages are still passed up the chain
+    //  And if there are no errors I would forward the input value 
+
     if (message.size() < 11) {
         throw std::runtime_error("size cannot be less than 11, 10 for opcode and 1 for #");
     }
@@ -89,8 +97,12 @@ constexpr std::true_type ValidateString(StringView message) {
     return std::true_type();
 }
 
+/// Splits a string_view into pairs of "key,value"
+///  Never trailing or pervailing commas
 template<typename StringView>
 std::vector<StringView> SplitIntoPairs(StringView from) {
+    // Unclear from requirements if trailing , is optional or required
+    //  we accept both but force neither
     if (from.back() == ',') {
         from.remove_suffix(1);
     }
@@ -109,30 +121,35 @@ std::vector<StringView> SplitIntoPairs(StringView from) {
 
 template<typename StringView>
 std::basic_string<typename StringView::value_type> ParseKeyValueFields(StringView message_data) {
-    // param_value WILL have no more than 6 decimal places
-    //  the wording "will" was taken to mean 
-    //  this is validated ahead of time
+    // > "param_value WILL have no more than 6 decimal places"
+    //     the wording "will" was taken to mean 
+    //     this is validated ahead of time
+    //   else I'd do (size() - find('.')) <= 6
     using String = std::basic_string<typename StringView::value_type>;
     ValidateStringViewType<StringView>();
-    String result{};
+    // Zero length message would otherwise crash
     if (message_data.size() < 3) {
         throw std::runtime_error(
             "message could not be parsed into key value pairs as it was not long enough"
         );
     }
+    String result{};
     const auto pairs = SplitIntoPairs(message_data);
     // const auto pair = pairs.at(0); 
     for (const auto pair : pairs )
     {
+        // a comma is in the middle: "key,value"
         const auto comma_pos = pair.find(',');
         if (comma_pos == std::string_view::npos) {
-            throw std::logic_error("Bug in SplitIntoPairs");
+            throw std::logic_error("Bug in SplitIntoPairs, no comma found");
         }
         const auto param_name = pair.substr(0, comma_pos);
         const auto param_value = pair.substr(comma_pos + 1);
         if (param_name.size() > 15) {
+            // The only place where wide/short string difference matters
             throw std::runtime_error(
-                "Paramerter name was longer than the allowed 15 characters");
+                "Paramerter name was longer than the allowed 15 characters"
+            );
         }
         result += param_name;
         // do elemtent wise to avoid wstring issues
@@ -161,7 +178,7 @@ void AddHistory(StringView opcode) {
 
 // Note:
 //  This is the only place the char/wchar stuff will ever produce a
-//  wrong answer and that is only if an opcode entered is a wchar
+//  wrong answer (cut off) and that is only if an opcode entered is a wchar
 //  current expected usage is always a short string
 template<typename char_t>
 std::basic_string<char_t> HistoryToString() {

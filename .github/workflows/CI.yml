@@ -67,6 +67,7 @@ jobs:
             os: windows-latest
     runs-on: ${{ matrix.os }}
     # Don't use all my minutes
+    #  Realistically 30 seconds should be enough
     timeout-minutes: 10
     steps:
     - uses: actions/checkout@v4
