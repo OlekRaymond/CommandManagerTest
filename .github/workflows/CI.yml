@@ -1,6 +1,7 @@
 on:
   - push
   - pull_request
+  - workflow_dispatch
 
 jobs:
   ReleaseBuilds:
@@ -68,7 +69,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     # Don't use all my minutes
     #  Realistically 30 seconds should be enough
-    timeout-minutes: 10
     steps:
     - uses: actions/checkout@v4
     - *setup-dirs
@@ -84,5 +84,4 @@ jobs:
       run: cmake --install build --prefix ${{ steps.strings.outputs.install-dir }}
     - name: Run FuzzTest
       working-directory: ${{ steps.strings.outputs.install-dir }}
-      run: |
-        ./bin/FuzzTest || true
+      run: ./bin/FuzzTest -max_total_time=600
